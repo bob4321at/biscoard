@@ -40,11 +40,17 @@ func main() {
 			panic(err)
 		}
 
+		chats := []Chat{}
+
 		for _, chat := range temp_chat_list {
-			if chat.Name == temp_data.Name {
-				c.JSON(http.StatusAccepted, chat)
+			for _, user := range chat.Users {
+				if user == temp_data.Name {
+					chats = append(chats, chat)
+				}
 			}
 		}
+
+		c.JSON(http.StatusAccepted, chats)
 	})
 
 	r.Run(":5151")

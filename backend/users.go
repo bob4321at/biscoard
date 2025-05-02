@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -70,7 +69,6 @@ func AddUser(c *gin.Context) {
 		}
 
 		temp_user_list = append(temp_user_list, temp_user)
-		fmt.Println(temp_user_list)
 
 		f.Close()
 		os.Remove("./users.json")

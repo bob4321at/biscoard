@@ -56,7 +56,6 @@ func main() {
 							}
 
 							chats.Add(widget.NewButton(data.Name, func() {
-
 							}))
 						}),
 					)))
@@ -107,6 +106,8 @@ func main() {
 			defer resp.Body.Close()
 
 			Screen.SetContent(mainUi)
+
+			Current_User = NewUser(loginUsernameInput.Text, loginPasswordInput.Text)
 		}),
 
 		widget.NewButton("Login", func() {
@@ -133,6 +134,30 @@ func main() {
 				name_Text.Text += Current_User.Username
 
 				Screen.SetContent(mainUi)
+
+			}
+
+			getRoomData, err := json.Marshal(NetworkChat{Current_User.Username, []string{}})
+
+			resp, err = http.Post("http://localhost:5151/GetChatsForUser", "json", bytes.NewBuffer(getRoomData))
+			if err != nil {
+				panic(err)
+			}
+
+			temp_string_chats, err := io.ReadAll(resp.Body)
+			if err != nil {
+				panic(err)
+			}
+
+			chats_data := []Chat{}
+			if err := json.Unmarshal(temp_string_chats, &chats_data); err != nil {
+				panic(err)
+			}
+
+			for _, chat := range chats_data {
+				chats.Add(widget.NewButton(chat.Name, func() {
+					// to do later
+				}))
 			}
 		}),
 	)

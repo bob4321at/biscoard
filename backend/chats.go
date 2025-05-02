@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 
@@ -99,8 +98,6 @@ func MakeChatNetworked(c *gin.Context) {
 		if err != nil {
 			panic(err)
 		}
-
-		fmt.Println(string(temp_string_data))
 
 		f.Close()
 		os.Remove("./chats.json")
