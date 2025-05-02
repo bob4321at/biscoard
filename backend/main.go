@@ -13,40 +13,37 @@ func main() {
 	r := gin.Default()
 
 	r.POST("/AddUser", AddUser)
+	r.POST("/GetUser", GetUser)
 
-	r.POST("/GetUser", func(c *gin.Context) {
+	r.POST("/MakeChat", MakeChatNetworked)
+	r.POST("/GetChatsForUser", func(c *gin.Context) {
 		data, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			panic(err)
 		}
 
-		temp_user := User{}
+		temp_data := NetworkChat{}
 
-		if err := json.Unmarshal(data, &temp_user); err != nil {
+		if err := json.Unmarshal(data, &temp_data); err != nil {
 			panic(err)
 		}
 
-		if _, err := os.Stat("./users.json"); err != nil {
+		previous_data, err := os.ReadFile("./chats.json")
+		if err != nil {
 			c.Status(http.StatusBadRequest)
-		} else {
-			previous_data, err := os.ReadFile("./users.json")
-			if err != nil {
-				panic(err)
-			}
+		}
 
-			temp_user_list := []User{}
-			err = json.Unmarshal(previous_data, &temp_user_list)
-			if err != nil {
-				panic(err)
-			}
+		temp_chat_list := []Chat{}
 
-			for _, user := range temp_user_list {
-				if temp_user.Username == user.Username && temp_user.Password == user.Password {
-					c.JSON(http.StatusAccepted, user)
-				}
-			}
+		err = json.Unmarshal(previous_data, &temp_chat_list)
+		if err != nil {
+			panic(err)
+		}
 
-			c.Status(http.StatusBadRequest)
+		for _, chat := range temp_chat_list {
+			if chat.Name == temp_data.Name {
+				c.JSON(http.StatusAccepted, chat)
+			}
 		}
 	})
 
