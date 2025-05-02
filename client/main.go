@@ -17,18 +17,71 @@ var Current_User = User{}
 
 func main() {
 	myApp := app.New()
-	loginScreen := myApp.NewWindow("Hello")
+	Screen := myApp.NewWindow("Hello")
+
+	name_Text := widget.NewLabel("")
+
+	mainUiInnerWindows := container.NewHBox()
+
+	newRoomNameEntry := widget.NewEntry()
+
+	chats := container.NewVBox()
+
+	sideBar := container.NewHSplit(
+		container.NewVBox(
+			name_Text,
+
+			chats,
+
+			widget.NewButton("New Chat", func() {
+				mainUiInnerWindows.Add(container.NewInnerWindow("pls",
+					container.NewVBox(
+						container.NewGridWithColumns(
+							2,
+							widget.NewLabel("Chat Name"),
+							newRoomNameEntry,
+						),
+						widget.NewButton("Create Chat", func() {
+							data := NetworkChat{
+								newRoomNameEntry.Text,
+								[]string{Current_User.Username},
+							}
+							temp_data, err := json.Marshal(data)
+							if err != nil {
+								panic(err)
+							}
+							_, err = http.Post("http://localhost:5151/MakeChat", "json", bytes.NewBuffer(temp_data))
+							if err != nil {
+								panic(err)
+							}
+
+							chats.Add(widget.NewButton(data.Name, func() {
+
+							}))
+						}),
+					)))
+			}),
+		),
+		container.NewVBox(),
+	)
+	sideBar.Offset = -0.1
+
+	mainUi := container.NewVBox(
+		sideBar,
+		mainUiInnerWindows,
+	)
 
 	loginUsernameInput := widget.NewEntry()
-	loginUsernameInput.SetPlaceHolder("                ")
+	loginUsernameInput.SetPlaceHolder("")
 
-	loginUsernameContainer := container.NewGridWithColumns(2,
+	loginUsernameContainer := container.NewGridWithColumns(
+		2,
 		widget.NewLabel("Username: "),
 		loginUsernameInput,
 	)
 
 	loginPasswordInput := widget.NewEntry()
-	loginPasswordInput.SetPlaceHolder("                ")
+	loginPasswordInput.SetPlaceHolder("")
 
 	loginPasswordContainer := container.NewGridWithColumns(2,
 		widget.NewLabel("Password: "),
@@ -53,7 +106,7 @@ func main() {
 			}
 			defer resp.Body.Close()
 
-			fmt.Println(resp.Status)
+			Screen.SetContent(mainUi)
 		}),
 
 		widget.NewButton("Login", func() {
@@ -77,17 +130,18 @@ func main() {
 				json.Unmarshal(temp_data, &temp_user)
 
 				Current_User = temp_user
-			}
+				name_Text.Text += Current_User.Username
 
-			fmt.Println(Current_User)
+				Screen.SetContent(mainUi)
+			}
 		}),
 	)
 
-	loginScreen.SetContent(
+	Screen.SetContent(
 		loginUi,
 	)
 
-	loginScreen.Show()
+	Screen.Show()
 	myApp.Run()
 	tidyUp()
 }
