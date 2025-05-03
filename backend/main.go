@@ -13,6 +13,7 @@ func main() {
 	r.POST("/MakeChat", MakeChatNetworked)
 	r.POST("/GetChatsForUser", GetChatsForUser)
 	r.POST("/SendMessege", SendMessegeNetworked)
+	r.POST("/AddUserToChat", AddUserToChatNetworked)
 
 	r.Run(":5151")
 }

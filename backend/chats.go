@@ -205,3 +205,59 @@ func SendMessegeNetworked(c *gin.Context) {
 
 	f.Close()
 }
+
+func AddUserToChatNetworked(c *gin.Context) {
+	data, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	temp_data := NetworkChat{}
+	if err := json.Unmarshal(data, &temp_data); err != nil {
+		panic(err)
+	}
+
+	f, err := os.Open("./chats.json")
+	if err != nil {
+		panic(err)
+	}
+
+	previous_data, err := os.ReadFile(f.Name())
+	if err != nil {
+		panic(err)
+	}
+
+	temp_chat_list := []Chat{}
+
+	err = json.Unmarshal(previous_data, &temp_chat_list)
+	if err != nil {
+		panic(err)
+	}
+
+	for tci := range temp_chat_list {
+		if temp_chat_list[tci].Name == temp_data.Name {
+			for _, temp_name := range temp_chat_list[tci].Users {
+				if temp_name == temp_data.Username[0] {
+					return
+				}
+			}
+			temp_chat_list[tci].Users = append(temp_chat_list[tci].Users, temp_data.Username[0])
+		}
+	}
+
+	os.Remove("./chats.json")
+
+	f, err = os.Create("./chats.json")
+	if err != nil {
+		panic(err)
+	}
+
+	chat_string_data, err := json.Marshal(temp_chat_list)
+	if err != nil {
+		panic(err)
+	}
+
+	f.Write(chat_string_data)
+
+	f.Close()
+}

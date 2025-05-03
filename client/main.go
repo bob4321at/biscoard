@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -14,6 +15,7 @@ import (
 )
 
 var Current_User = User{}
+var Current_Chat_String string
 
 func main() {
 	myApp := app.New()
@@ -26,11 +28,54 @@ func main() {
 	newRoomNameEntry := widget.NewEntry()
 
 	chats := container.NewVBox()
+	chat_loaded := false
 
 	rightSideContainer := container.NewVBox()
 
 	messeges := container.NewVBox()
 	sendMessegeEntry := widget.NewEntry()
+	addUserEntry := widget.NewEntry()
+
+	go func() {
+		for true {
+			time.Sleep(time.Second)
+			if chat_loaded {
+				getRoomData, err := json.Marshal(NetworkChat{Current_User.Username, []string{}})
+
+				resp, err := http.Post("http://localhost:5151/GetChatsForUser", "json", bytes.NewBuffer(getRoomData))
+				if err != nil {
+					panic(err)
+				}
+
+				temp_string_chats, err := io.ReadAll(resp.Body)
+				if err != nil {
+					panic(err)
+				}
+
+				chats_data := []Chat{}
+				if err := json.Unmarshal(temp_string_chats, &chats_data); err != nil {
+					panic(err)
+				}
+
+				// current_chat := &Chat{}
+				current_id := 0
+
+				for ci := range chats_data {
+					if chats_data[ci].Name == Current_Chat_String {
+						// current_chat = &chats_data[ci]
+						current_id = ci
+					}
+				}
+
+				messeges.RemoveAll()
+				for _, m := range chats_data[current_id].Messeges {
+					messeges.Add(widget.NewLabel(m.Username + ": " + m.Messege))
+				}
+
+				fmt.Println(chats_data)
+			}
+		}
+	}()
 
 	sideBar := container.NewHSplit(
 		container.NewVBox(
@@ -86,6 +131,8 @@ func main() {
 							}
 
 							chats.Add(widget.NewButton(data.Name, func() {
+								chat_loaded = true
+								Current_Chat_String = data.Name
 								rightSideContainer.RemoveAll()
 								rightSideContainer.Add(
 									container.NewVBox(
@@ -218,6 +265,7 @@ func main() {
 
 			for _, chat := range chats_data {
 				chats.Add(widget.NewButton(chat.Name, func() {
+					chat_loaded = true
 					messeges.RemoveAll()
 					for _, m := range chat.Messeges {
 						messeges.Add(widget.NewLabel(m.Username + ": " + m.Messege))
@@ -254,8 +302,16 @@ func main() {
 								}),
 								widget.NewButton("Add User", func() {
 									mainUiInnerWindows.Add(container.NewInnerWindow("Add User", container.NewHBox(
-										widget.NewEntry(),
+										addUserEntry,
 										widget.NewButton("Add", func() {
+											network_data := NetworkChat{chat.Name, []string{addUserEntry.Text}}
+
+											newMessegeData, err := json.Marshal(network_data)
+											if err != nil {
+												panic(err)
+											}
+
+											http.Post("http://localhost:5151/AddUserToChat", "json", bytes.NewBuffer(newMessegeData))
 										}),
 									)))
 								}),
